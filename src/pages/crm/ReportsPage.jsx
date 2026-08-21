@@ -27,20 +27,28 @@ export default function ReportsPage() {
 
       <section className="kpi-grid">
         <article className="kpi">
-          <span>Total pipeline</span>
-          <strong>{money(total)}</strong>
+          <div>
+            <span>Total pipeline</span>
+            <strong>{money(total)}</strong>
+          </div>
         </article>
         <article className="kpi">
-          <span>Won revenue</span>
-          <strong>{money(won)}</strong>
+          <div>
+            <span>Won revenue</span>
+            <strong>{money(won)}</strong>
+          </div>
         </article>
         <article className="kpi">
-          <span>Companies</span>
-          <strong>{companies.length}</strong>
+          <div>
+            <span>Companies</span>
+            <strong>{companies.length}</strong>
+          </div>
         </article>
         <article className="kpi">
-          <span>Open tasks</span>
-          <strong>{openTasks}</strong>
+          <div>
+            <span>Open tasks</span>
+            <strong>{openTasks}</strong>
+          </div>
         </article>
       </section>
 
@@ -57,7 +65,7 @@ export default function ReportsPage() {
                 <b>{money(row.value)}</b>
               </div>
               <div className="bar-track">
-                <span style={{ width: `${(row.value / maxValue) * 100}%` }} />
+                <span className={`bar-fill bar-${row.stage.toLowerCase()}`} style={{ width: `${(row.value / maxValue) * 100}%` }} />
               </div>
               <small>{row.count} deals</small>
             </li>

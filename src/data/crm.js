@@ -65,3 +65,10 @@ export function initials(name) {
     .join('')
     .toUpperCase()
 }
+
+const tones = ['mint', 'sky', 'sand', 'lilac', 'rose']
+
+export function avatarTone(name) {
+  const total = [...(name || '')].reduce((sum, char) => sum + char.charCodeAt(0), 0)
+  return tones[total % tones.length]
+}

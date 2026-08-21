@@ -52,7 +52,7 @@ export default function PipelinePage() {
           const column = visible.filter((deal) => deal.stage === stage)
           const total = column.reduce((sum, deal) => sum + deal.value, 0)
           return (
-            <section className="kanban-col" key={stage}>
+            <section className={`kanban-col col-${stage.toLowerCase()}`} data-stage={stage} key={stage}>
               <header>
                 <h2>{stage}</h2>
                 <span>{column.length} · {money(total)}</span>

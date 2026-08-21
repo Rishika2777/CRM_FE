@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import Modal from '../../components/Modal'
 import PageHeader from '../../components/PageHeader'
-import { initials, money } from '../../data/crm'
+import { initials, money, avatarTone } from '../../data/crm'
 import { useCrm } from '../../lib/CrmContext'
 
 export default function CompaniesPage() {
@@ -49,7 +49,7 @@ export default function CompaniesPage() {
         {cards.map((company) => (
           <article className="company-card" key={company.id}>
             <div className="cell-person">
-              <span className="avatar">{initials(company.name)}</span>
+              <span className={`avatar tone-${avatarTone(company.name)}`}>{initials(company.name)}</span>
               <div>
                 <h2>{company.name}</h2>
                 <p>{company.industry} · {company.city}</p>

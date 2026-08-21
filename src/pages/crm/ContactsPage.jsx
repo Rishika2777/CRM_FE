@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import Modal from '../../components/Modal'
 import PageHeader from '../../components/PageHeader'
 import StatusBadge from '../../components/StatusBadge'
-import { initials } from '../../data/crm'
+import { initials, avatarTone } from '../../data/crm'
 import { useCrm } from '../../lib/CrmContext'
 
 export default function ContactsPage() {
@@ -42,6 +42,10 @@ export default function ContactsPage() {
         }
       />
 
+      <div className="toolbar">
+        <span className="count-pill">{rows.length} people</span>
+      </div>
+
       <div className="panel table-wrap">
         <table className="data-table">
           <thead>
@@ -58,7 +62,7 @@ export default function ContactsPage() {
               <tr key={contact.id}>
                 <td>
                   <div className="cell-person">
-                    <span className="avatar sm">{initials(contact.name)}</span>
+                    <span className={`avatar sm tone-${avatarTone(contact.name)}`}>{initials(contact.name)}</span>
                     <div>
                       <strong>{contact.name}</strong>
                       <small>{contact.title}</small>

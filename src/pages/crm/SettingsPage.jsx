@@ -38,6 +38,7 @@ export default function SettingsPage() {
 
       <form className="settings-grid" onSubmit={save}>
         <section className="panel">
+          <div className="settings-kicker">Your account</div>
           <h2>Profile</h2>
           <label className="field">
             <span>Full name</span>
@@ -62,6 +63,7 @@ export default function SettingsPage() {
         </section>
 
         <section className="panel">
+          <div className="settings-kicker">Company defaults</div>
           <h2>Workspace</h2>
           <label className="field">
             <span>Workspace name</span>

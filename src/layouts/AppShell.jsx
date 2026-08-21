@@ -121,7 +121,7 @@ export default function AppShell() {
             Settings
           </NavLink>
           <div className="side-user">
-            <div className="avatar" aria-hidden="true">{first.slice(0, 1).toUpperCase()}</div>
+            <div className="avatar tone-mint" aria-hidden="true">{first.slice(0, 1).toUpperCase()}</div>
             <div className="side-user-copy">
               <strong>{name}</strong>
               <span>{session.email}</span>

@@ -14,7 +14,9 @@ export default function TasksPage() {
     () => tasks.filter((task) => `${task.title} ${task.related} ${task.type}`.toLowerCase().includes(query)),
     [tasks, query],
   )
-  const openCount = rows.filter((task) => !task.done).length
+  const openRows = rows.filter((task) => !task.done)
+  const doneRows = rows.filter((task) => task.done)
+  const openCount = openRows.length
 
   function submit(event) {
     event.preventDefault()
@@ -37,23 +39,50 @@ export default function TasksPage() {
         }
       />
 
-      <div className="panel">
-        <ul className="task-list">
-          {rows.map((task) => (
-            <li key={task.id} className={task.done ? 'task done' : 'task'}>
-              <label>
-                <input type="checkbox" checked={task.done} onChange={() => toggleTask(task.id)} />
-                <div>
-                  <p>{task.title}</p>
-                  <small>{task.related} · due {task.due}</small>
-                </div>
-              </label>
-              <StatusBadge label={task.type} />
-            </li>
-          ))}
-        </ul>
-        {rows.length === 0 ? <p className="empty">No tasks match that search.</p> : null}
+      <div className="task-board">
+        <div className="panel">
+          <div className="panel-head">
+            <h2>Open</h2>
+            <span className="count-pill">{openRows.length}</span>
+          </div>
+          <ul className="task-list">
+            {openRows.map((task) => (
+              <li key={task.id} className="task">
+                <label>
+                  <input type="checkbox" checked={task.done} onChange={() => toggleTask(task.id)} />
+                  <div>
+                    <p>{task.title}</p>
+                    <small>{task.related} · due {task.due}</small>
+                  </div>
+                </label>
+                <StatusBadge label={task.type} />
+              </li>
+            ))}
+          </ul>
+          {openRows.length === 0 ? <p className="empty">Nothing waiting. Nice work.</p> : null}
+        </div>
+        <div className="panel">
+          <div className="panel-head">
+            <h2>Done</h2>
+            <span className="count-pill">{doneRows.length}</span>
+          </div>
+          <ul className="task-list">
+            {doneRows.map((task) => (
+              <li key={task.id} className="task done">
+                <label>
+                  <input type="checkbox" checked={task.done} onChange={() => toggleTask(task.id)} />
+                  <div>
+                    <p>{task.title}</p>
+                    <small>{task.related} · due {task.due}</small>
+                  </div>
+                </label>
+                <StatusBadge label={task.type} />
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
+      {rows.length === 0 ? <p className="empty">No tasks match that search.</p> : null}
 
       {open ? (
         <Modal title="New task" onClose={() => setOpen(false)}>

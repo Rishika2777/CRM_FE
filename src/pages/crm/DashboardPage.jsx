@@ -124,6 +124,28 @@ export default function DashboardPage() {
           </ul>
         </div>
       </section>
+
+      <section className="panel due-panel">
+        <div className="panel-head">
+          <div>
+            <h2>Due now</h2>
+            <p className="panel-hint">Keep the next conversations moving</p>
+          </div>
+          <Link to="/tasks">All tasks</Link>
+        </div>
+        <ul className="due-list">
+          {dueTasks.slice(0, 4).map((task) => (
+            <li key={task.id}>
+              <span className="due-mark" />
+              <div>
+                <p>{task.title}</p>
+                <small>{task.related} · {task.due}</small>
+              </div>
+              <StatusBadge label={task.type} />
+            </li>
+          ))}
+        </ul>
+      </section>
     </div>
   )
 }
