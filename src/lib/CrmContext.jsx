@@ -1,14 +1,51 @@
-import { createContext, useContext, useMemo, useState } from 'react'
-import { seedActivity, seedCompanies, seedContacts, seedDeals, seedTasks } from '../data/crm'
+import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { seedActivity, seedDeals, seedTasks } from '../data/crm'
+import {
+  createCompany,
+  createContact,
+  listCompanies,
+  listContacts,
+  mapCompany,
+  mapContact,
+} from './crmApi'
 
 const CrmContext = createContext(null)
 
 export function CrmProvider({ children }) {
   const [search, setSearch] = useState('')
-  const [contacts, setContacts] = useState(seedContacts)
-  const [companies, setCompanies] = useState(seedCompanies)
+  const [contacts, setContacts] = useState([])
+  const [companies, setCompanies] = useState([])
   const [deals, setDeals] = useState(seedDeals)
   const [tasks, setTasks] = useState(seedTasks)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function load() {
+      setLoading(true)
+      setError('')
+      try {
+        const [companyRows, contactRows] = await Promise.all([
+          listCompanies(),
+          listContacts(),
+        ])
+        if (cancelled) return
+        setCompanies((companyRows || []).map(mapCompany))
+        setContacts((contactRows || []).map(mapContact))
+      } catch (err) {
+        if (!cancelled) setError(err.message)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const value = useMemo(
     () => ({
@@ -19,17 +56,19 @@ export function CrmProvider({ children }) {
       deals,
       tasks,
       activity: seedActivity,
-      addContact(contact) {
-        setContacts((current) => [
-          { id: crypto.randomUUID(), status: 'Lead', lastTouch: 'Just now', ...contact },
-          ...current,
-        ])
+      loading,
+      error,
+      async addContact(contact) {
+        const created = await createContact(contact)
+        const mapped = mapContact(created)
+        setContacts((current) => [mapped, ...current])
+        return mapped
       },
-      addCompany(company) {
-        setCompanies((current) => [
-          { id: crypto.randomUUID(), employees: 1, owner: 'You', ...company },
-          ...current,
-        ])
+      async addCompany(company) {
+        const created = await createCompany(company)
+        const mapped = mapCompany(created)
+        setCompanies((current) => [mapped, ...current])
+        return mapped
       },
       addDeal(deal) {
         setDeals((current) => [
@@ -38,7 +77,7 @@ export function CrmProvider({ children }) {
         ])
       },
       moveDeal(id, stage) {
-        setDeals((current) => current.map((deal) => (deal.id === id ? { ...deal, stage } : deal)))
+        setDeals((current) => current.map((item) => (item.id === id ? { ...item, stage } : item)))
       },
       addTask(task) {
         setTasks((current) => [
@@ -52,7 +91,7 @@ export function CrmProvider({ children }) {
         )
       },
     }),
-    [search, contacts, companies, deals, tasks],
+    [search, contacts, companies, deals, tasks, loading, error],
   )
 
   return <CrmContext.Provider value={value}>{children}</CrmContext.Provider>

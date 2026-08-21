@@ -1,13 +1,15 @@
 import { useMemo, useState } from 'react'
 import Modal from '../../components/Modal'
 import PageHeader from '../../components/PageHeader'
-import { initials, money, avatarTone } from '../../data/crm'
+import { avatarTone, initials, money } from '../../data/crm'
 import { useCrm } from '../../lib/CrmContext'
 
 export default function CompaniesPage() {
-  const { companies, contacts, deals, search, addCompany } = useCrm()
+  const { companies, contacts, deals, search, addCompany, loading, error } = useCrm()
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState({ name: '', industry: '', city: '' })
+  const [formError, setFormError] = useState('')
+  const [saving, setSaving] = useState(false)
   const query = search.trim().toLowerCase()
 
   const cards = useMemo(
@@ -16,20 +18,37 @@ export default function CompaniesPage() {
         .filter((company) => `${company.name} ${company.industry} ${company.city}`.toLowerCase().includes(query))
         .map((company) => ({
           ...company,
-          people: contacts.filter((contact) => contact.companyId === company.id).length,
+          people: contacts.filter((contact) => String(contact.companyId) === String(company.id)).length,
           pipeline: deals
-            .filter((deal) => deal.companyId === company.id && deal.stage !== 'Won')
+            .filter((deal) => String(deal.companyId) === String(company.id) && deal.stage !== 'Won')
             .reduce((sum, deal) => sum + deal.value, 0),
         })),
     [companies, contacts, deals, query],
   )
 
-  function submit(event) {
-    event.preventDefault()
-    if (!form.name.trim()) return
-    addCompany(form)
-    setOpen(false)
+  function openModal() {
+    setFormError('')
     setForm({ name: '', industry: '', city: '' })
+    setOpen(true)
+  }
+
+  async function submit(event) {
+    event.preventDefault()
+    if (!form.name.trim() || !form.industry.trim() || !form.city.trim()) {
+      setFormError('Company name, industry, and city are required.')
+      return
+    }
+
+    setSaving(true)
+    setFormError('')
+    try {
+      await addCompany(form)
+      setOpen(false)
+    } catch (err) {
+      setFormError(err.message)
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -39,11 +58,17 @@ export default function CompaniesPage() {
         title="Companies"
         subtitle="The organizations behind your pipeline."
         action={
-          <button type="button" className="primary-btn" onClick={() => setOpen(true)}>
+          <button type="button" className="primary-btn" onClick={openModal}>
             Add company
           </button>
         }
       />
+
+      {error ? <div className="banner banner--error">{error}</div> : null}
+
+      <div className="toolbar">
+        <span className="count-pill">{loading ? 'Loading…' : `${cards.length} companies`}</span>
+      </div>
 
       <section className="company-grid">
         {cards.map((company) => (
@@ -65,17 +90,18 @@ export default function CompaniesPage() {
                 <dd>{money(company.pipeline)}</dd>
               </div>
               <div>
-                <dt>Owner</dt>
-                <dd>{company.owner}</dd>
+                <dt>City</dt>
+                <dd>{company.city}</dd>
               </div>
             </dl>
           </article>
         ))}
       </section>
-      {cards.length === 0 ? <p className="empty">No companies match that search.</p> : null}
+      {!loading && cards.length === 0 ? <p className="empty">No companies yet. Add one to get started.</p> : null}
 
       {open ? (
         <Modal title="New company" onClose={() => setOpen(false)}>
+          {formError ? <div className="banner banner--error">{formError}</div> : null}
           <form className="auth-form" onSubmit={submit}>
             <label className="field">
               <span>Company name</span>
@@ -83,13 +109,15 @@ export default function CompaniesPage() {
             </label>
             <label className="field">
               <span>Industry</span>
-              <input value={form.industry} onChange={(e) => setForm({ ...form, industry: e.target.value })} />
+              <input value={form.industry} onChange={(e) => setForm({ ...form, industry: e.target.value })} required />
             </label>
             <label className="field">
               <span>City</span>
-              <input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
+              <input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} required />
             </label>
-            <button className="primary-btn" type="submit">Save company</button>
+            <button className="primary-btn" type="submit" disabled={saving}>
+              {saving ? 'Saving…' : 'Save company'}
+            </button>
           </form>
         </Modal>
       ) : null}
