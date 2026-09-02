@@ -1,12 +1,19 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
-import { seedActivity, seedDeals, seedTasks } from '../data/crm'
 import {
   createCompany,
   createContact,
+  createDeal,
+  createTask,
   listCompanies,
   listContacts,
+  listDeals,
+  listTasks,
   mapCompany,
   mapContact,
+  mapDeal,
+  mapTask,
+  updateDealStage,
+  updateTaskDone,
 } from './crmApi'
 
 const CrmContext = createContext(null)
@@ -15,8 +22,8 @@ export function CrmProvider({ children }) {
   const [search, setSearch] = useState('')
   const [contacts, setContacts] = useState([])
   const [companies, setCompanies] = useState([])
-  const [deals, setDeals] = useState(seedDeals)
-  const [tasks, setTasks] = useState(seedTasks)
+  const [deals, setDeals] = useState([])
+  const [tasks, setTasks] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -27,13 +34,29 @@ export function CrmProvider({ children }) {
       setLoading(true)
       setError('')
       try {
-        const [companyRows, contactRows] = await Promise.all([
+        const [companyResult, contactResult, dealResult, taskResult] = await Promise.allSettled([
           listCompanies(),
           listContacts(),
+          listDeals(),
+          listTasks(),
         ])
         if (cancelled) return
-        setCompanies((companyRows || []).map(mapCompany))
-        setContacts((contactRows || []).map(mapContact))
+
+        if (companyResult.status === 'fulfilled') {
+          setCompanies((companyResult.value || []).map(mapCompany))
+        }
+        if (contactResult.status === 'fulfilled') {
+          setContacts((contactResult.value || []).map(mapContact))
+        }
+        if (dealResult.status === 'fulfilled') {
+          setDeals((dealResult.value || []).map(mapDeal))
+        }
+        if (taskResult.status === 'fulfilled') {
+          setTasks((taskResult.value || []).map(mapTask))
+        }
+
+        const failed = [companyResult, contactResult, dealResult, taskResult].find((result) => result.status === 'rejected')
+        if (failed) setError(failed.reason?.message || 'Something went wrong. Please try again.')
       } catch (err) {
         if (!cancelled) setError(err.message)
       } finally {
@@ -55,7 +78,6 @@ export function CrmProvider({ children }) {
       companies,
       deals,
       tasks,
-      activity: seedActivity,
       loading,
       error,
       async addContact(contact) {
@@ -70,25 +92,31 @@ export function CrmProvider({ children }) {
         setCompanies((current) => [mapped, ...current])
         return mapped
       },
-      addDeal(deal) {
-        setDeals((current) => [
-          { id: crypto.randomUUID(), stage: 'Lead', owner: 'You', ...deal },
-          ...current,
-        ])
+      async addDeal(deal) {
+        const created = await createDeal(deal)
+        const mapped = mapDeal(created)
+        setDeals((current) => [mapped, ...current])
+        return mapped
       },
-      moveDeal(id, stage) {
-        setDeals((current) => current.map((item) => (item.id === id ? { ...item, stage } : item)))
+      async moveDeal(id, stage) {
+        const updated = await updateDealStage(id, stage)
+        const mapped = mapDeal(updated)
+        setDeals((current) => current.map((item) => (item.id === id ? mapped : item)))
+        return mapped
       },
-      addTask(task) {
-        setTasks((current) => [
-          { id: crypto.randomUUID(), done: false, type: 'Task', ...task },
-          ...current,
-        ])
+      async addTask(task) {
+        const created = await createTask(task)
+        const mapped = mapTask(created)
+        setTasks((current) => [mapped, ...current])
+        return mapped
       },
-      toggleTask(id) {
-        setTasks((current) =>
-          current.map((task) => (task.id === id ? { ...task, done: !task.done } : task)),
-        )
+      async toggleTask(id) {
+        const current = tasks.find((task) => task.id === id)
+        if (!current) throw new Error('Task not found')
+        const updated = await updateTaskDone(id, !current.done)
+        const mapped = mapTask(updated)
+        setTasks((items) => items.map((task) => (task.id === id ? mapped : task)))
+        return mapped
       },
     }),
     [search, contacts, companies, deals, tasks, loading, error],
